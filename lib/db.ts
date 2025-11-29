@@ -1,16 +1,10 @@
-import { PrismaClient } from "@prisma/client/edge";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaClient } from "@prisma/client";
 
-const createPrismaClient = () =>
-  new PrismaClient().$extends(withAccelerate());
+const globalForPrisma = globalThis as { prisma?: PrismaClient };
 
-// ❗ Fix: global type must be loose, not PrismaClient-specific
-const globalForPrisma = globalThis as any;
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-export const prisma =
-  globalForPrisma.prisma ?? createPrismaClient();
-
-// ❗ In development, store the client globally (to avoid hot-reload issues)
+// In development, store the client globally to avoid hot-reload issues
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
