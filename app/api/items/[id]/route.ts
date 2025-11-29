@@ -47,7 +47,7 @@ export async function GET(
     // Get price analysis
     const priceCheck = await checkItemPrice(item.name, item.price, item.condition);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       item: {
         ...item,
         aiPriceRating: priceCheck.rating,
@@ -55,6 +55,15 @@ export async function GET(
         priceExplanation: priceCheck.explanation,
       },
     });
+
+    // Add cache headers for better performance
+    // Cache for 60 seconds on client, allow stale-while-revalidate for 120 seconds
+    response.headers.set(
+      "Cache-Control",
+      "public, s-maxage=60, stale-while-revalidate=120"
+    );
+
+    return response;
   } catch (error) {
     console.error("Get item error:", error);
     return NextResponse.json(

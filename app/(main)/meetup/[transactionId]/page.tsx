@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { Button, Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui";
-import { ArrowLeft, Zap, MapPin, Clock, IndianRupee, CheckCircle, AlertTriangle, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, IndianRupee, CheckCircle, AlertTriangle } from "lucide-react";
 
 interface MeetupLocation {
   name: string;
