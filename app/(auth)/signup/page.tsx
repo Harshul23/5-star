@@ -3,14 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, FileUpload } from "@/components/ui";
-import { Zap, Mail, Lock, User, GraduationCap } from "lucide-react";
+import { Zap, Mail, Lock, User, GraduationCap, RefreshCw } from "lucide-react";
 
 type Step = "register" | "verify-email" | "verify-id";
 
 export default function SignupPage() {
   const [step, setStep] = useState<Step>("register");
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -86,6 +89,53 @@ export default function SignupPage() {
     }
   };
 
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || resendLoading) return;
+    
+    setResendLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const res = await fetch("/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to resend OTP");
+      }
+
+      // In development, the OTP is returned for testing
+      if (data.otp) {
+        setFormData((prev) => ({ ...prev, otp: data.otp }));
+      }
+      
+      setSuccessMessage("A new verification code has been sent to your email.");
+      
+      // Start cooldown timer (60 seconds)
+      setResendCooldown(60);
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   const handleVerifyId = async () => {
     setLoading(true);
     setError(null);
@@ -141,6 +191,12 @@ export default function SignupPage() {
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4 text-sm">
               {error}
+            </div>
+          )}
+          
+          {successMessage && (
+            <div className="bg-green-50 text-green-600 p-3 rounded-md mb-4 text-sm">
+              {successMessage}
             </div>
           )}
 
@@ -230,6 +286,21 @@ export default function SignupPage() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Verifying..." : "Verify Email"}
               </Button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={resendLoading || resendCooldown > 0}
+                  className="text-sm text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline inline-flex items-center gap-1"
+                >
+                  <RefreshCw className={`h-3 w-3 ${resendLoading ? 'animate-spin' : ''}`} />
+                  {resendCooldown > 0
+                    ? `Resend code in ${resendCooldown}s`
+                    : resendLoading
+                    ? "Sending..."
+                    : "Didn't receive the code? Resend"}
+                </button>
+              </div>
             </form>
           )}
 

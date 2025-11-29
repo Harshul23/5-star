@@ -53,8 +53,15 @@ NEXT_PUBLIC_SOCKET_URL="http://localhost:3001"
 |----------|-------------|----------|
 | `DATABASE_URL` | PostgreSQL connection string | Yes |
 | `JWT_SECRET` | Secret key for JWT tokens (min 32 characters for security) | Yes |
+| `EMAIL_HOST` | SMTP server hostname for email delivery | Optional* |
+| `EMAIL_PORT` | SMTP server port (default: 587) | Optional |
+| `EMAIL_USER` | SMTP username/email | Optional* |
+| `EMAIL_PASSWORD` | SMTP password or app password | Optional* |
+| `EMAIL_FROM` | Sender email address | Optional |
 | `ANTHROPIC_API_KEY` | API key for Claude AI features (verification, moderation) | Optional |
 | `NEXT_PUBLIC_SOCKET_URL` | URL for Socket.io server | Optional |
+
+\* **Email Configuration:** Required for OTP email delivery in production. See [Email Setup Guide](./docs/EMAIL_SETUP.md) for detailed instructions on configuring email providers like Gmail, SendGrid, or Mailgun.
 
 ## Step 4: Set Up PostgreSQL Database
 
@@ -109,9 +116,12 @@ QuickGrab uses JWT (JSON Web Tokens) for authentication. Here's how it works:
 
 1. User submits registration form (`/signup`)
 2. API creates user with hashed password
-3. OTP is generated and sent to user's email (logged in development)
-4. User verifies email with OTP
-5. Optional: User uploads student ID for AI verification
+3. OTP is generated and sent to user's email
+   - If email is configured: OTP is sent via SMTP
+   - In development without email: OTP is logged to console and returned in API response
+4. User can resend OTP if needed (rate limited to once per 60 seconds)
+5. User verifies email with OTP (expires after 10 minutes)
+6. Optional: User uploads student ID for AI verification
 
 ### Login Flow
 

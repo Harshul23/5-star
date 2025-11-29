@@ -3,6 +3,7 @@ import { registerSchema } from "@/lib/validators";
 import { prisma } from "@/lib/db";
 import { hash } from "bcryptjs";
 import { generateOTP } from "@/lib/ai/verification";
+import { sendOTPEmail, isEmailConfigured } from "@/lib/services/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,16 +60,26 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // In production, send OTP via email
-    // For MVP, we'll return it (or log it)
-    console.log(`Email verification OTP for ${email}: ${otp}`);
+    // Send OTP via email
+    const emailResult = await sendOTPEmail(email, otp, name);
+    
+    if (!emailResult.success && isEmailConfigured()) {
+      console.error(`Failed to send OTP email to ${email}:`, emailResult.error);
+      // Don't fail registration, but log the error
+    }
+
+    // Log OTP for development/debugging purposes
+    if (!isEmailConfigured()) {
+      console.log(`[DEV MODE] Email verification OTP for ${email}: ${otp}`);
+    }
 
     return NextResponse.json(
       {
         message: "User registered successfully. Please verify your email.",
         user,
-        // Only include OTP in development
-        ...(process.env.NODE_ENV === "development" && { otp }),
+        emailSent: emailResult.success,
+        // Only include OTP in development when email is not configured
+        ...(process.env.NODE_ENV === "development" && !isEmailConfigured() && { otp }),
       },
       { status: 201 }
     );
