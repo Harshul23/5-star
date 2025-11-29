@@ -50,7 +50,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       const data = await res.json();
       setItem(data.item);
     } catch (error) {
-      // Error handled silently
+      console.error("Failed to fetch item:", error);
     } finally {
       setLoading(false);
     }
@@ -85,6 +85,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       // Redirect to chat/transaction page
       window.location.href = `/chat/${data.transaction.id}`;
     } catch (error) {
+      console.error("Request failed:", error);
       alert("Something went wrong");
     } finally {
       setRequesting(false);

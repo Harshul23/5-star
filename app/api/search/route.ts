@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { searchSchema } from "@/lib/validators";
 import { prisma } from "@/lib/db";
 import { parseSearchQuery } from "@/lib/ai/search-parser";
+import { checkItemPrice } from "@/lib/ai/price-checker";
 
 export async function POST(request: NextRequest) {
   try {
@@ -104,15 +105,25 @@ export async function POST(request: NextRequest) {
       prisma.item.count({ where }),
     ]);
 
-    // Use cached price ratings from database (no AI calls needed)
-    // Price ratings are calculated when items are created/updated
+    // Enhance items with AI price ratings
+    const enhancedItems = await Promise.all(
+      items.map(async (item: { name: string; price: number; condition: string }) => {
+        const priceCheck = await checkItemPrice(item.name, item.price, item.condition);
+        return {
+          ...item,
+          aiPriceRating: priceCheck.rating,
+          avgCampusPrice: priceCheck.averagePrice,
+          priceExplanation: priceCheck.explanation,
+        };
+      })
+    );
 
     return NextResponse.json({
       query: {
         original: query,
         parsed: parsedQuery,
       },
-      items,
+      items: enhancedItems,
       pagination: {
         page,
         limit,
@@ -121,6 +132,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    console.error("Search error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

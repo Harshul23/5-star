@@ -27,6 +27,7 @@ export async function callClaudeAPI(
   const apiKey = process.env.ANTHROPIC_API_KEY;
   
   if (!apiKey) {
+    console.warn("ANTHROPIC_API_KEY not set, using mock AI response");
     return mockAIResponse(messages[messages.length - 1].content);
   }
 
@@ -53,6 +54,7 @@ export async function callClaudeAPI(
     const data: ClaudeResponse = await response.json();
     return data.content[0]?.text || "";
   } catch (error) {
+    console.error("Claude API call failed:", error);
     return mockAIResponse(messages[messages.length - 1].content);
   }
 }

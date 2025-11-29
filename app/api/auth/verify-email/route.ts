@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       verified: true,
     });
   } catch (error) {
+    console.error("Email verification error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

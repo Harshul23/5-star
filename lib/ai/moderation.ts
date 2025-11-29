@@ -78,6 +78,7 @@ export async function moderateContent(content: string): Promise<ModerationResult
       return fallbackModeration(content);
     }
   } catch (error) {
+    console.error("Moderation error:", error);
     return fallbackModeration(content);
   }
 }
@@ -226,6 +227,7 @@ Analyze and provide a fair resolution.`,
       return fallbackDisputeResolution(evidence);
     }
   } catch (error) {
+    console.error("Dispute resolution error:", error);
     return fallbackDisputeResolution(evidence);
   }
 }

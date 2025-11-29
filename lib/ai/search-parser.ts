@@ -62,6 +62,7 @@ Return structured JSON with item, urgency, category, priceRange, condition, keyw
       return fallbackQueryParse(query);
     }
   } catch (error) {
+    console.error("Search parsing error:", error);
     return fallbackQueryParse(query);
   }
 }

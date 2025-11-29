@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
     });
 
     // In production, send OTP via email
-    // For MVP, OTP is returned in response
+    // For MVP, we'll return it (or log it)
+    console.log(`Email verification OTP for ${email}: ${otp}`);
 
     return NextResponse.json(
       {
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    console.error("Registration error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

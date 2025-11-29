@@ -89,6 +89,7 @@ Return JSON with: name, college, expiryDate, isAuthentic, confidence, issues`,
       };
     }
   } catch (error) {
+    console.error("ID verification error:", error);
     return {
       isValid: false,
       confidence: 0,

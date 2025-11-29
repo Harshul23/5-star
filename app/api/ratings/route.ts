@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    console.error("Create rating error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -217,6 +218,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    console.error("Get ratings error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

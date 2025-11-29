@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    console.error("Create dispute error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -197,6 +198,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ disputes });
   } catch (error) {
+    console.error("Get disputes error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

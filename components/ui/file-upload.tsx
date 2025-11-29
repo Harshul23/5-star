@@ -5,7 +5,6 @@ import { useState, useRef, useCallback } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
-import { compressImage } from "@/lib/utils/image-compression";
 
 export interface FileUploadProps {
   accept?: string;
@@ -32,7 +31,6 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [compressing, setCompressing] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const validateFile = useCallback(
@@ -76,44 +74,21 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
     );
 
     const handleFile = useCallback(
-      async (selectedFile: File) => {
+      (selectedFile: File) => {
         if (!validateFile(selectedFile)) {
           return;
         }
 
-        // Compress images before processing
+        setFile(selectedFile);
+        onFileSelect?.(selectedFile);
+
+        // Create preview for images
         if (selectedFile.type.startsWith("image/")) {
-          setCompressing(true);
-          try {
-            const compressedDataUrl = await compressImage(selectedFile);
-            setPreview(compressedDataUrl);
-            
-            // Convert compressed data URL back to File for onFileSelect
-            const response = await fetch(compressedDataUrl);
-            const blob = await response.blob();
-            const compressedFile = new File([blob], selectedFile.name, {
-              type: selectedFile.type,
-              lastModified: Date.now(),
-            });
-            
-            setFile(compressedFile);
-            onFileSelect?.(compressedFile);
-          } catch (err) {
-            setError("Failed to compress image. Please try again.");
-            // Fallback to original file
-            setFile(selectedFile);
-            onFileSelect?.(selectedFile);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              setPreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(selectedFile);
-          } finally {
-            setCompressing(false);
-          }
-        } else {
-          setFile(selectedFile);
-          onFileSelect?.(selectedFile);
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            setPreview(e.target?.result as string);
+          };
+          reader.readAsDataURL(selectedFile);
         }
       },
       [onFileSelect, validateFile]
@@ -183,12 +158,7 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
             file && "border-green-500 bg-green-50"
           )}
         >
-          {compressing ? (
-            <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-              <p className="text-sm text-gray-600">Compressing image...</p>
-            </div>
-          ) : file && preview ? (
+          {file && preview ? (
             <div className="relative">
               <img
                 src={preview}

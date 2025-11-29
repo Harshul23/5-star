@@ -9,8 +9,9 @@ function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   
   if (!secret) {
-    // In development, use a default
+    // In development, use a default (with warning)
     if (process.env.NODE_ENV === "development") {
+      console.warn("⚠️ JWT_SECRET not set. Using development default. DO NOT use in production!");
       return "dev-only-secret-do-not-use-in-production";
     }
     throw new Error("JWT_SECRET environment variable is required in production");

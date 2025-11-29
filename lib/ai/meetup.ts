@@ -111,6 +111,7 @@ Prioritize public, well-lit campus locations.`,
       };
     }
   } catch (error) {
+    console.error("Meetup suggestion error:", error);
     return {
       locations: generateFallbackLocations(midpoint),
       suggestedTime: "2:00 PM - 5:00 PM (daylight hours)",

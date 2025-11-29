@@ -44,23 +44,19 @@ export async function GET(
       );
     }
 
-    // Use cached price ratings from database (no AI calls needed)
-    // Generate simple explanation from stored rating
-    const priceExplanation = item.aiPriceRating && item.avgCampusPrice
-      ? item.price > item.avgCampusPrice
-        ? `This item is priced ${((item.price - item.avgCampusPrice) / item.avgCampusPrice * 100).toFixed(0)}% above the typical campus price.`
-        : item.price < item.avgCampusPrice
-        ? `This item is priced ${((item.avgCampusPrice - item.price) / item.avgCampusPrice * 100).toFixed(0)}% below the typical campus price.`
-        : "Price is in line with typical campus marketplace prices."
-      : "Price analysis unavailable.";
+    // Get price analysis
+    const priceCheck = await checkItemPrice(item.name, item.price, item.condition);
 
     return NextResponse.json({
       item: {
         ...item,
-        priceExplanation,
+        aiPriceRating: priceCheck.rating,
+        avgCampusPrice: priceCheck.averagePrice,
+        priceExplanation: priceCheck.explanation,
       },
     });
   } catch (error) {
+    console.error("Get item error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -150,6 +146,7 @@ export async function PUT(
       item,
     });
   } catch (error) {
+    console.error("Update item error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -200,6 +197,7 @@ export async function DELETE(
       message: "Item deleted successfully",
     });
   } catch (error) {
+    console.error("Delete item error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

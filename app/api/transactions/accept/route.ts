@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       transaction: updatedTransaction,
     });
   } catch (error) {
+    console.error("Accept transaction error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

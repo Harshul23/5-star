@@ -86,15 +86,15 @@ class SocketClient {
     if (!this.socket) return;
 
     this.socket.on("connect", () => {
-      // Socket connected
+      console.log("Socket connected:", this.socket?.id);
     });
 
-    this.socket.on("disconnect", () => {
-      // Socket disconnected
+    this.socket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
     });
 
-    this.socket.on("connect_error", () => {
-      // Socket connection error
+    this.socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
     });
   }
 
