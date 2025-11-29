@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { registerSchema } from "@/lib/validators";
 import { prisma } from "@/lib/db";
 import { hash } from "bcryptjs";
-import { generateOTP } from "@/lib/ai/verification";
+import { generateOTP, OTP_EXPIRY_MS } from "@/lib/ai/verification";
 import { sendOTPEmail, isEmailConfigured } from "@/lib/services/email";
 
 export async function POST(request: NextRequest) {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     // Generate OTP for email verification
     const otp = generateOTP();
-    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
 
     // Create user
     const user = await prisma.user.create({
@@ -64,13 +64,13 @@ export async function POST(request: NextRequest) {
     const emailResult = await sendOTPEmail(email, otp, name);
     
     if (!emailResult.success && isEmailConfigured()) {
-      console.error(`Failed to send OTP email to ${email}:`, emailResult.error);
+      console.error(`Failed to send OTP email to ${email}`);
       // Don't fail registration, but log the error
     }
 
-    // Log OTP for development/debugging purposes
+    // Log message for development/debugging purposes (OTP not logged for security)
     if (!isEmailConfigured()) {
-      console.log(`[DEV MODE] Email verification OTP for ${email}: ${otp}`);
+      console.log(`[DEV MODE] Email service not configured. OTP returned in API response for ${email}`);
     }
 
     return NextResponse.json(

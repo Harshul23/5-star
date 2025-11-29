@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { generateOTP } from "@/lib/ai/verification";
+import { generateOTP, OTP_EXPIRY_MS, OTP_RESEND_COOLDOWN_MS } from "@/lib/ai/verification";
 import { sendOTPEmail, isEmailConfigured } from "@/lib/services/email";
 
 const resendOtpSchema = z.object({
@@ -42,14 +42,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check rate limiting - don't allow resend within 60 seconds of last OTP
+    // Check rate limiting - don't allow resend within cooldown period of last OTP
     if (user.otpExpiresAt) {
-      const otpCreatedAt = new Date(user.otpExpiresAt.getTime() - 10 * 60 * 1000);
+      const otpCreatedAt = new Date(user.otpExpiresAt.getTime() - OTP_EXPIRY_MS);
       const timeSinceLastOtp = Date.now() - otpCreatedAt.getTime();
-      const minWaitTime = 60 * 1000; // 60 seconds
 
-      if (timeSinceLastOtp < minWaitTime) {
-        const waitSeconds = Math.ceil((minWaitTime - timeSinceLastOtp) / 1000);
+      if (timeSinceLastOtp < OTP_RESEND_COOLDOWN_MS) {
+        const waitSeconds = Math.ceil((OTP_RESEND_COOLDOWN_MS - timeSinceLastOtp) / 1000);
         return NextResponse.json(
           { error: `Please wait ${waitSeconds} seconds before requesting a new OTP` },
           { status: 429 }
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Generate new OTP
     const otp = generateOTP();
-    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
 
     // Update user with new OTP
     await prisma.user.update({
@@ -74,12 +73,12 @@ export async function POST(request: NextRequest) {
     const emailResult = await sendOTPEmail(email, otp, user.name);
     
     if (!emailResult.success && isEmailConfigured()) {
-      console.error(`Failed to resend OTP email to ${email}:`, emailResult.error);
+      console.error(`Failed to resend OTP email to ${email}`);
     }
 
-    // Log OTP for development/debugging purposes
+    // Log masked OTP for development/debugging purposes
     if (!isEmailConfigured()) {
-      console.log(`[DEV MODE] Resent email verification OTP for ${email}: ${otp}`);
+      console.log(`[DEV MODE] Resent email verification OTP for ${email}`);
     }
 
     return NextResponse.json({

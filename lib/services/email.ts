@@ -6,10 +6,18 @@
 
 import nodemailer from "nodemailer";
 
+// Parse port number with validation and fallback
+function parseEmailPort(portString: string | undefined): number {
+  const defaultPort = 587;
+  if (!portString) return defaultPort;
+  const port = parseInt(portString, 10);
+  return isNaN(port) || port < 1 || port > 65535 ? defaultPort : port;
+}
+
 // Email configuration from environment variables
 const EMAIL_CONFIG = {
   host: process.env.EMAIL_HOST || "",
-  port: parseInt(process.env.EMAIL_PORT || "587"),
+  port: parseEmailPort(process.env.EMAIL_PORT),
   secure: process.env.EMAIL_SECURE === "true", // true for 465, false for other ports
   user: process.env.EMAIL_USER || "",
   password: process.env.EMAIL_PASSWORD || "",
@@ -28,9 +36,12 @@ export function isEmailConfigured(): boolean {
 // Create reusable transporter
 function createTransporter() {
   if (!isEmailConfigured()) {
-    console.warn(
-      "Email service not configured. Set EMAIL_HOST, EMAIL_USER, and EMAIL_PASSWORD environment variables."
-    );
+    // Only log warning in development to avoid log noise in production
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "[Email Service] Not configured. Set EMAIL_HOST, EMAIL_USER, and EMAIL_PASSWORD environment variables."
+      );
+    }
     return null;
   }
 

@@ -99,6 +99,12 @@ Return JSON with: name, college, expiryDate, isAuthentic, confidence, issues`,
   }
 }
 
+// OTP configuration constants
+export const OTP_EXPIRY_MINUTES = 10;
+export const OTP_EXPIRY_MS = OTP_EXPIRY_MINUTES * 60 * 1000;
+export const OTP_RESEND_COOLDOWN_SECONDS = 60;
+export const OTP_RESEND_COOLDOWN_MS = OTP_RESEND_COOLDOWN_SECONDS * 1000;
+
 // Validate email OTP
 export function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
