@@ -1,24 +1,31 @@
 # Student Verification System Setup Guide
 
-This document provides complete setup instructions for the QuickGrab Student Verification System with face matching, OCR, and auto-approval capabilities.
+This document provides complete setup instructions for the QuickGrab Student Verification System with student email validation, OTP verification, face matching, OCR, and auto-approval capabilities.
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Verification Flow](#verification-flow)
-3. [Quick Start](#quick-start)
-4. [Detailed Setup](#detailed-setup)
-5. [API Reference](#api-reference)
-6. [Configuration](#configuration)
-7. [Admin Dashboard](#admin-dashboard)
-8. [Troubleshooting](#troubleshooting)
+2. [Student Email Verification Flow](#student-email-verification-flow)
+3. [ID Verification Flow (Optional)](#id-verification-flow-optional)
+4. [Quick Start](#quick-start)
+5. [Detailed Setup](#detailed-setup)
+6. [API Reference](#api-reference)
+7. [Configuration](#configuration)
+8. [Admin Dashboard](#admin-dashboard)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Overview
 
-The Student Verification System validates student identities through:
+The Student Verification System validates student identities through multiple layers:
 
+### Layer 1: Student Email Verification (Required)
+- **Email Domain Validation**: Restricts signup to approved student domains (.edu, .ac.in, etc.)
+- **OTP Verification**: 6-digit code sent to student email for verification
+- **Status Tracking**: unverified → verified flow
+
+### Layer 2: ID Verification (Optional)
 - **Face Matching** (3-10 seconds): Compares selfie with student ID photo
 - **OCR Text Extraction** (2-5 seconds): Extracts name, college, and student ID from ID card
 - **Auto-Approval Logic**: Automatically approves verifications that meet all criteria
@@ -26,6 +33,8 @@ The Student Verification System validates student identities through:
 
 ### Key Features
 
+- ✅ Student email domain validation (.edu, .ac.in, .ac.uk, etc.)
+- ✅ OTP-based email verification
 - ✅ Face matching using AWS Rekognition or Face++
 - ✅ OCR extraction using Claude Vision API
 - ✅ Configurable approval thresholds
@@ -33,9 +42,68 @@ The Student Verification System validates student identities through:
 - ✅ Admin review dashboard support
 - ✅ Comprehensive error handling and logging
 
+### Access Restrictions
+
+Unverified users CANNOT:
+- List items for sale
+- Chat with other users
+- Buy or sell items
+- Access the main marketplace
+
+Only verified users gain full platform access.
+
 ---
 
-## Verification Flow
+## Student Email Verification Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                STUDENT EMAIL VERIFICATION FLOW                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. User Signup                                                  │
+│     ├── Enter Name                                               │
+│     ├── Enter Student Email (college domain required)           │
+│     └── Enter Password                                           │
+│                          ▼                                       │
+│  2. Domain Validation                                            │
+│     ├── Check if email ends with approved domain                │
+│     ├── .edu, .ac.in, .ac.uk, etc.                              │
+│     └── Reject non-student emails (Gmail, Yahoo, etc.)          │
+│                          ▼                                       │
+│  3. OTP Generation                                               │
+│     ├── Generate 6-digit OTP                                     │
+│     └── Send to student email                                    │
+│                          ▼                                       │
+│  4. Email Verification                                           │
+│     ├── User enters OTP                                          │
+│     └── Verify within 10 minutes                                 │
+│                          ▼                                       │
+│  5. Account Activation                                           │
+│     ├── Mark emailVerified = true                                │
+│     └── Grant full platform access                               │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Approved Student Domains
+
+The system accepts emails from the following domains:
+
+| Region | Domains |
+|--------|---------|
+| US | .edu |
+| India | .ac.in, .edu.in, .iit.ac.in, .nit.ac.in, .bits-pilani.ac.in, etc. |
+| UK | .ac.uk |
+| Australia | .edu.au |
+| Canada | .edu.ca |
+| Europe | .edu.es, .edu.fr, .edu.de, .ac.at, .edu.it |
+| Asia | .edu.cn, .edu.sg, .edu.hk, .edu.my, .edu.ph |
+| Others | .edu.br, .edu.mx |
+
+---
+
+## ID Verification Flow (Optional)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

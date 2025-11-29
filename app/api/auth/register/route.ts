@@ -3,6 +3,11 @@ import { registerSchema } from "@/lib/validators";
 import { prisma } from "@/lib/db";
 import { hash } from "bcryptjs";
 import { generateOTP } from "@/lib/ai/verification";
+import { 
+  validateStudentEmail, 
+  isStudentDomainValidationEnabled,
+  getCollegeFromDomain 
+} from "@/lib/services/email-domain-validator";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +23,22 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, email, password, college } = validationResult.data;
+
+    // Validate student email domain (if enabled)
+    if (isStudentDomainValidationEnabled()) {
+      const emailValidation = validateStudentEmail(email);
+      
+      if (!emailValidation.isValid) {
+        return NextResponse.json(
+          { 
+            error: "Invalid student email", 
+            message: emailValidation.reason || "Please use a valid student email from your college/university.",
+            domain: emailValidation.domain,
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -38,13 +59,18 @@ export async function POST(request: NextRequest) {
     const otp = generateOTP();
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
+    // Extract college from email domain if not provided
+    const emailDomain = email.split("@")[1];
+    const inferredCollege = getCollegeFromDomain(emailDomain);
+    const finalCollege = college || inferredCollege || null;
+
     // Create user
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        college: college || null,
+        college: finalCollege,
         emailVerificationOtp: otp,
         otpExpiresAt,
         verificationStatus: "UNVERIFIED",

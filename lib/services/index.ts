@@ -4,3 +4,4 @@ export * from "./face-matching";
 export * from "./ocr-extraction";
 export * from "./verification-processor";
 export * from "./verification-worker";
+export * from "./email-domain-validator";
