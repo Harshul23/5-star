@@ -5,9 +5,6 @@ import { checkItemPrice } from "@/lib/ai/price-checker";
 import { getUserFromRequest } from "@/lib/auth";
 
 
-// Helper to get user from token
-
-
 // GET /api/items/[id] - Get a single item
 export async function GET(
   request: NextRequest,
@@ -16,6 +13,7 @@ export async function GET(
   try {
     const { id } = await params;
 
+    // Use stored price rating from database instead of making AI call for faster response
     const item = await prisma.item.findUnique({
       where: { id },
       include: {
@@ -44,15 +42,17 @@ export async function GET(
       );
     }
 
-    // Get price analysis
-    const priceCheck = await checkItemPrice(item.name, item.price, item.condition);
-
+    // Use stored values from database for fast response
+    // Price analysis is computed when item is created/updated
     const response = NextResponse.json({
       item: {
         ...item,
-        aiPriceRating: priceCheck.rating,
-        avgCampusPrice: priceCheck.averagePrice,
-        priceExplanation: priceCheck.explanation,
+        // Use stored values, fallback to defaults if not set
+        aiPriceRating: item.aiPriceRating || "Fair",
+        avgCampusPrice: item.avgCampusPrice || item.price,
+        priceExplanation: item.aiPriceRating 
+          ? `This item is rated as "${item.aiPriceRating}" based on campus market analysis.`
+          : "Price analysis will be available shortly.",
       },
     });
 

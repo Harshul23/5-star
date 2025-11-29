@@ -10,8 +10,13 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-    // Datasource configuration handled via DATABASE_URL
+    // Enable connection pooling optimizations
+    datasourceUrl: process.env.DATABASE_URL,
   });
+
+// Recommended: Enable connection pooling for serverless
+// Ensure DATABASE_URL uses pooled connection string from Neon:
+// postgresql://user:password@ep-xxx-pooler.region.aws.neon.tech/dbname?sslmode=require&pgbouncer=true
 
 // In development, reuse the same client across hot reloads
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
