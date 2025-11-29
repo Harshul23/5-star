@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
       prisma.item.count({ where }),
     ]);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       items,
       pagination: {
         page,
@@ -140,6 +140,15 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     });
+
+    // Add cache headers for better performance
+    // Cache for 30 seconds on client, allow stale-while-revalidate for 60 seconds
+    response.headers.set(
+      "Cache-Control",
+      "public, s-maxage=30, stale-while-revalidate=60"
+    );
+
+    return response;
   } catch (error) {
     console.error("Get items error:", error);
     return NextResponse.json(

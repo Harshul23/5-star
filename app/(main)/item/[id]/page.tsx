@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
-import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Avatar, AvatarFallback, Textarea } from "@/components/ui";
-import { ArrowLeft, Star, Shield, Clock, MapPin, MessageCircle, AlertTriangle, Zap, CheckCircle } from "lucide-react";
+import Image from "next/image";
+import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Avatar, AvatarFallback } from "@/components/ui";
+import { ArrowLeft, Star, Shield, Clock, MessageCircle, AlertTriangle, Zap, CheckCircle } from "lucide-react";
 
 interface ItemDetails {
   id: string;
@@ -38,13 +39,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   const [item, setItem] = useState<ItemDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
-  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    fetchItem();
-  }, [id]);
-
-  const fetchItem = async () => {
+  const fetchItem = useCallback(async () => {
     try {
       const res = await fetch(`/api/items/${id}`);
       const data = await res.json();
@@ -54,7 +50,11 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchItem();
+  }, [fetchItem]);
 
   const handleRequest = async () => {
     setRequesting(true);
@@ -150,9 +150,16 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           {/* Left: Image & Description */}
           <div className="space-y-6">
             {/* Main Image */}
-            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden">
+            <div className="aspect-square bg-gray-100 rounded-2xl overflow-hidden relative">
               {item.photo ? (
-                <img src={item.photo} alt={item.name} className="w-full h-full object-cover" />
+                <Image 
+                  src={item.photo} 
+                  alt={item.name} 
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
+                  priority
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">
                   No Image Available
@@ -164,8 +171,15 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
             {item.photos.length > 0 && (
               <div className="flex gap-2 overflow-x-auto">
                 {item.photos.map((photo, i) => (
-                  <div key={i} className="w-20 h-20 bg-gray-100 rounded-2xl overflow-hidden flex-shrink-0">
-                    <img src={photo} alt={`${item.name} ${i + 1}`} className="w-full h-full object-cover" />
+                  <div key={i} className="w-20 h-20 bg-gray-100 rounded-2xl overflow-hidden flex-shrink-0 relative">
+                    <Image 
+                      src={photo} 
+                      alt={`${item.name} ${i + 1}`} 
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                      loading="lazy"
+                    />
                   </div>
                 ))}
               </div>

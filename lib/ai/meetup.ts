@@ -72,7 +72,7 @@ const CAMPUS_SAFE_SPOTS = [
 export async function suggestMeetupLocations(
   buyerLocation: { lat: number; lng: number } | null,
   sellerLocation: { lat: number; lng: number } | null,
-  _campusName?: string
+  _campusName?: string // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<MeetupSuggestion> {
   // Calculate midpoint if both locations available
   let midpoint: { lat: number; lng: number } | null = null;

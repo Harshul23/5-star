@@ -78,7 +78,16 @@ export async function GET(
     }
 
     // Return user with embedded ratings and items (no redundant top-level fields)
-    return NextResponse.json({ user });
+    const response = NextResponse.json({ user });
+
+    // Add cache headers for better performance
+    // Cache for 30 seconds, allow stale-while-revalidate for 60 seconds
+    response.headers.set(
+      "Cache-Control",
+      "public, s-maxage=30, stale-while-revalidate=60"
+    );
+
+    return response;
   } catch {
     console.error("Error fetching user profile");
     return NextResponse.json(

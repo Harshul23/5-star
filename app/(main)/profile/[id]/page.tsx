@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Avatar, AvatarFallback, Button } from "@/components/ui";
 import { ArrowLeft, Zap, Star, Shield, Package, LogOut } from "lucide-react";
@@ -306,9 +307,16 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                   <Card className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
+                        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center relative overflow-hidden">
                           {item.photo ? (
-                            <img src={item.photo} alt={item.name} className="w-full h-full object-cover rounded-2xl" />
+                            <Image 
+                              src={item.photo} 
+                              alt={item.name} 
+                              fill
+                              sizes="64px"
+                              className="object-cover rounded-2xl"
+                              loading="lazy"
+                            />
                           ) : (
                             <Package className="h-8 w-8 text-gray-400" />
                           )}

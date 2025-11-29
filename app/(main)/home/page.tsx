@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button, Input, Card, CardContent, CardHeader, CardTitle, Badge, Avatar, AvatarFallback, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui";
 import { Search, Zap, Filter, Star, Clock, Mic, User, LogOut } from "lucide-react";
@@ -61,21 +62,7 @@ export default function HomePage() {
     }
   }, []);
 
-  // Fetch items on mount
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const handleLogout = () => {
-    // Clear user session data from localStorage
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setCurrentUser(null);
-    // Redirect to signin page
-    router.push("/signin");
-  };
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/items");
@@ -86,6 +73,20 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Fetch items on mount - fetchItems is stable due to useCallback with empty deps
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  const handleLogout = () => {
+    // Clear user session data from localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setCurrentUser(null);
+    // Redirect to signin page
+    router.push("/signin");
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -270,10 +271,13 @@ export default function HomePage() {
                   {/* Item Image */}
                   <div className="aspect-square bg-gray-100 relative overflow-hidden rounded-t-lg">
                     {item.photo ? (
-                      <img
+                      <Image
                         src={item.photo}
                         alt={item.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                        className="object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">

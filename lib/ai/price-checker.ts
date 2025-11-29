@@ -138,10 +138,9 @@ function fallbackPriceCheck(
 
 // Update average prices based on completed transactions
 export function updateAveragePrices(
-  _itemCategory: string,
-  _soldPrice: number
+  _itemCategory: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+  _soldPrice: number // eslint-disable-line @typescript-eslint/no-unused-vars
 ): void {
   // In production, this would update the database
   // For MVP, prices are static
-  console.log("Price update logged for analytics");
 }
