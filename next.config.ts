@@ -8,10 +8,35 @@ const nextConfig: NextConfig = {
     // Cache optimized images for 60 seconds, stale for 1 year
     minimumCacheTTL: 60,
     // Allow images from common image hosting domains
+    // For production, restrict to specific trusted domains
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+      },
+      {
+        protocol: "https",
+        hostname: "via.placeholder.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.jsdelivr.net",
       },
     ],
     // Device sizes for responsive images

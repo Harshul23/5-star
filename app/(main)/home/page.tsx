@@ -62,21 +62,6 @@ export default function HomePage() {
     }
   }, []);
 
-  // Fetch items on mount
-  useEffect(() => {
-    fetchItems();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleLogout = () => {
-    // Clear user session data from localStorage
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setCurrentUser(null);
-    // Redirect to signin page
-    router.push("/signin");
-  };
-
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
@@ -89,6 +74,20 @@ export default function HomePage() {
       setLoading(false);
     }
   }, []);
+
+  // Fetch items on mount - fetchItems is stable due to useCallback with empty deps
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  const handleLogout = () => {
+    // Clear user session data from localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setCurrentUser(null);
+    // Redirect to signin page
+    router.push("/signin");
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
