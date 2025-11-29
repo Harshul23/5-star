@@ -23,6 +23,32 @@ export const verifyIdSchema = z.object({
   idPhotoUrl: z.string().url("Invalid photo URL"),
 });
 
+// Student verification with face matching and OCR
+export const studentVerificationSchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+  studentIdPhotoUrl: z.string().url("Invalid student ID photo URL"),
+  selfiePhotoUrl: z.string().url("Invalid selfie photo URL"),
+});
+
+// Admin review schema
+export const adminReviewSchema = z.object({
+  verificationId: z.string().uuid("Invalid verification ID"),
+  action: z.enum(["APPROVE", "REJECT"]),
+  notes: z.string().max(1000).optional(),
+  rejectionReason: z.string().max(500).optional(),
+});
+
+// Verification status query
+export const verificationStatusSchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+});
+
+// Pending verifications list
+export const pendingVerificationsSchema = z.object({
+  page: z.number().int().positive().default(1),
+  limit: z.number().int().min(1).max(100).default(20),
+});
+
 // Item validators
 export const createItemSchema = z.object({
   name: z.string().min(2, "Item name must be at least 2 characters"),
@@ -98,6 +124,10 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
 export type VerifyIdInput = z.infer<typeof verifyIdSchema>;
+export type StudentVerificationInput = z.infer<typeof studentVerificationSchema>;
+export type AdminReviewInput = z.infer<typeof adminReviewSchema>;
+export type VerificationStatusInput = z.infer<typeof verificationStatusSchema>;
+export type PendingVerificationsInput = z.infer<typeof pendingVerificationsSchema>;
 export type CreateItemInput = z.infer<typeof createItemSchema>;
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 export type RequestTransactionInput = z.infer<typeof requestTransactionSchema>;

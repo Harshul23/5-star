@@ -53,6 +53,15 @@ enum DisputeDecision {
   DISMISSED
 }
 
+enum StudentVerificationStatus {
+  PENDING
+  PROCESSING
+  AUTO_APPROVED
+  NEEDS_REVIEW
+  APPROVED
+  REJECTED
+}
+
 // Models according to idea.md
 
 model User {
@@ -63,6 +72,7 @@ model User {
   college            String?
   photo              String?
   studentIdPhoto     String?
+  selfiePhoto        String?             // Selfie for face matching
   verificationStatus VerificationStatus  @default(UNVERIFIED)
   trustScore         Int                 @default(0)
   badges             String[]            @default([])
@@ -214,4 +224,51 @@ model Session {
 
   @@index([userId])
   @@index([token])
+}
+
+// Student Verification model for face matching and OCR
+model StudentVerification {
+  id                    String                    @id @default(uuid())
+  userId                String
+  studentIdPhotoUrl     String                    // Uploaded student ID image
+  selfiePhotoUrl        String                    // Uploaded selfie for face matching
+  status                StudentVerificationStatus @default(PENDING)
+  
+  // Face matching results
+  faceMatchScore        Float?                    // 0-100 similarity score
+  faceMatchConfidence   Float?                    // Confidence level of the match
+  
+  // OCR results
+  ocrExtractedName      String?                   // Name extracted from ID
+  ocrExtractedCollege   String?                   // College name extracted from ID
+  ocrExtractedStudentId String?                   // Student ID number extracted
+  ocrExtractedExpiry    String?                   // Expiry date extracted
+  ocrConfidence         Float?                    // OCR confidence level
+  ocrRawText            String?                   // Raw text extracted from ID
+  
+  // Validation flags
+  idLooksValid          Boolean                   @default(false)  // ID appears genuine
+  collegeRecognized     Boolean                   @default(false)  // College name recognized
+  
+  // Processing metadata
+  processingStartedAt   DateTime?
+  processingCompletedAt DateTime?
+  processingTimeMs      Int?                      // Total processing time in milliseconds
+  
+  // Review metadata (for manual review cases)
+  reviewedBy            String?                   // Admin user ID who reviewed
+  reviewedAt            DateTime?
+  reviewNotes           String?                   // Admin notes during review
+  rejectionReason       String?                   // Reason if rejected
+  
+  // Error handling
+  errorMessage          String?                   // Error message if processing failed
+  retryCount            Int                       @default(0)
+  
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
