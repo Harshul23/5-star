@@ -4,7 +4,7 @@ import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Avatar, AvatarFallback, Button } from "@/components/ui";
-import { ArrowLeft, Zap, Star, Shield, Package, LogOut } from "lucide-react";
+import { ArrowLeft, Zap, Star, Shield, Package, LogOut, Edit } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -188,6 +188,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                       <Shield className="h-3 w-3 mr-1" />
                       Verified
                     </Badge>
+                  )}
+                  {isOwnProfile && (
+                    <Link href="/profile/edit" className="ml-auto">
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Profile
+                      </Button>
+                    </Link>
                   )}
                 </div>
                 {user.college && (
