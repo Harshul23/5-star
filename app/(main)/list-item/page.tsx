@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle, Textarea } from "@/components/ui";
-import { ArrowLeft, Zap, Upload, DollarSign, Tag, FileText, Image } from "lucide-react";
+import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle, Textarea, FileUpload } from "@/components/ui";
+import { ArrowLeft, Zap, DollarSign, Tag } from "lucide-react";
 
 const CATEGORIES = [
   "Electronics",
@@ -28,6 +28,7 @@ const CONDITIONS = [
 export default function ListItemPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -199,20 +200,13 @@ export default function ListItemPage() {
               {/* Photo Upload */}
               <div className="space-y-2">
                 <Label>Photo</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-blue-500 transition-colors cursor-pointer">
-                  <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-sm text-gray-600 mb-2">
-                    Click to upload or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    PNG, JPG up to 10MB
-                  </p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </div>
+                <FileUpload
+                  accept="image/*"
+                  maxSize={10}
+                  onFileSelect={setPhotoFile}
+                  placeholder="Click to upload or drag and drop"
+                  hint="PNG, JPG up to 10MB"
+                />
               </div>
 
               {/* Submit */}

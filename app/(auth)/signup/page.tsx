@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
-import { Zap, Upload, Mail, Lock, User, GraduationCap } from "lucide-react";
+import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, FileUpload } from "@/components/ui";
+import { Zap, Mail, Lock, User, GraduationCap } from "lucide-react";
 
 type Step = "register" | "verify-email" | "verify-id";
 
@@ -19,6 +19,7 @@ export default function SignupPage() {
     otp: "",
   });
   const [userId, setUserId] = useState<string | null>(null);
+  const [idFile, setIdFile] = useState<File | null>(null);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,22 +235,14 @@ export default function SignupPage() {
 
           {step === "verify-id" && (
             <div className="space-y-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-blue-500 transition-colors cursor-pointer">
-                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-sm text-gray-600 mb-2">
-                  Upload your student ID card photo
-                </p>
-                <p className="text-xs text-gray-400">
-                  AI will verify your name, college, and expiry date
-                </p>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  id="id-upload"
-                />
-              </div>
-              <Button onClick={handleVerifyId} className="w-full" disabled={loading}>
+              <FileUpload
+                accept="image/*"
+                maxSize={10}
+                onFileSelect={setIdFile}
+                placeholder="Upload your student ID card photo"
+                hint="AI will verify your name, college, and expiry date"
+              />
+              <Button onClick={handleVerifyId} className="w-full" disabled={loading || !idFile}>
                 {loading ? "Verifying ID..." : "Verify Student ID"}
               </Button>
               <Button
