@@ -15,7 +15,7 @@ import {
   AvatarFallback,
   FileUpload,
 } from "@/components/ui";
-import { ArrowLeft, Zap, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Zap, Save, Loader2, X } from "lucide-react";
 
 interface UserData {
   id: string;
@@ -134,8 +134,12 @@ export default function EditProfilePage() {
       if (college !== (userData.college || "")) {
         updateData.college = college || null;
       }
+      // Handle photo changes: new photo uploaded or photo removed
       if (photoFile && photo) {
-        // Send the base64 data URL
+        // New photo uploaded - send the base64 data URL
+        updateData.photo = photo;
+      } else if (photo !== userData.photo) {
+        // Photo was changed (possibly removed)
         updateData.photo = photo;
       }
 
@@ -240,19 +244,34 @@ export default function EditProfilePage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Profile Photo */}
               <div className="flex flex-col items-center space-y-4">
-                <Avatar className="h-24 w-24">
-                  {photo ? (
-                    <img
-                      src={photo}
-                      alt={name}
-                      className="h-full w-full object-cover rounded-full"
-                    />
-                  ) : (
-                    <AvatarFallback className="text-3xl">
-                      {name.charAt(0)}
-                    </AvatarFallback>
+                <div className="relative">
+                  <Avatar className="h-24 w-24">
+                    {photo ? (
+                      <img
+                        src={photo}
+                        alt={name}
+                        className="h-full w-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <AvatarFallback className="text-3xl">
+                        {name.charAt(0)}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  {photo && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhoto(null);
+                        setPhotoFile(null);
+                      }}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      aria-label="Remove photo"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   )}
-                </Avatar>
+                </div>
                 <FileUpload
                   accept="image/*"
                   maxSize={5}

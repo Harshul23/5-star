@@ -190,8 +190,8 @@ export async function PUT(
       message: "Profile updated successfully",
       user: updatedUser,
     });
-  } catch {
-    console.error("Error updating user profile");
+  } catch (error) {
+    console.error("Error updating user profile:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
