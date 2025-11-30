@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
 import { Button, Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui";
-import { ArrowLeft, Zap, MapPin, Clock, IndianRupee, CheckCircle, AlertTriangle, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, IndianRupee, CheckCircle, AlertTriangle } from "lucide-react";
 
 interface MeetupLocation {
   name: string;
@@ -25,9 +25,11 @@ interface Transaction {
     price: number;
   };
   buyer: {
+    id: string;
     name: string;
   };
   seller: {
+    id: string;
     name: string;
   };
 }
@@ -38,54 +40,75 @@ export default function MeetupPage({ params }: { params: Promise<{ transactionId
   const [suggestedLocations, setSuggestedLocations] = useState<MeetupLocation[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<MeetupLocation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
   const [countdown, setCountdown] = useState<string>("");
 
-  useEffect(() => {
-    // Mock data
-    setTransaction({
-      id: transactionId,
-      status: "ACCEPTED",
-      escrowAmount: 25.00,
-      meetupLocation: null,
-      countdownEnd: null,
-      item: {
-        name: "iPhone Charger",
-        price: 25.00,
-      },
-      buyer: { name: "John Doe" },
-      seller: { name: "Jane Smith" },
-    });
+  // Fetch transaction data from API
+  const fetchTransaction = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please sign in to view this transaction");
+        setLoading(false);
+        return;
+      }
 
-    setSuggestedLocations([
-      {
-        name: "Main Library Entrance",
-        address: "123 Campus Drive",
-        type: "library",
-        distance: 150,
-        safetyRating: 5,
-        reasoning: "Well-lit, security cameras, high foot traffic",
-      },
-      {
-        name: "Student Union Building",
-        address: "456 University Ave",
-        type: "student_center",
-        distance: 200,
-        safetyRating: 5,
-        reasoning: "Open late, cafeteria, security desk",
-      },
-      {
-        name: "Campus Coffee Shop",
-        address: "789 College Blvd",
-        type: "cafe",
-        distance: 100,
-        safetyRating: 4,
-        reasoning: "Public seating, staff present, busy area",
-      },
-    ]);
+      const res = await fetch(`/api/transactions/${transactionId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    setLoading(false);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to load transaction");
+        setLoading(false);
+        return;
+      }
+
+      setTransaction(data.transaction);
+
+      // Set suggested locations (these are static for now since meetup AI is not fully integrated)
+      setSuggestedLocations([
+        {
+          name: "Main Library Entrance",
+          address: "123 Campus Drive",
+          type: "library",
+          distance: 150,
+          safetyRating: 5,
+          reasoning: "Well-lit, security cameras, high foot traffic",
+        },
+        {
+          name: "Student Union Building",
+          address: "456 University Ave",
+          type: "student_center",
+          distance: 200,
+          safetyRating: 5,
+          reasoning: "Open late, cafeteria, security desk",
+        },
+        {
+          name: "Campus Coffee Shop",
+          address: "789 College Blvd",
+          type: "cafe",
+          distance: 100,
+          safetyRating: 4,
+          reasoning: "Public seating, staff present, busy area",
+        },
+      ]);
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch transaction:", err);
+      setError("Something went wrong");
+      setLoading(false);
+    }
   }, [transactionId]);
+
+  useEffect(() => {
+    fetchTransaction();
+  }, [fetchTransaction]);
 
   // Countdown timer
   useEffect(() => {
@@ -179,7 +202,7 @@ export default function MeetupPage({ params }: { params: Promise<{ transactionId
       }
 
       alert("Transaction completed! Please rate the seller.");
-      window.location.href = `/profile/${transaction?.seller}`;
+      window.location.href = `/profile/${transaction?.seller?.id}`;
     } catch (error) {
       alert(error instanceof Error ? error.message : "Something went wrong");
     }
@@ -193,10 +216,13 @@ export default function MeetupPage({ params }: { params: Promise<{ transactionId
     );
   }
 
-  if (!transaction) {
+  if (error || !transaction) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Transaction not found</p>
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <p className="text-gray-600 mb-4">{error || "Transaction not found"}</p>
+        <Link href="/home">
+          <Button>Back to Home</Button>
+        </Link>
       </div>
     );
   }

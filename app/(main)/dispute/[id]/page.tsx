@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
 import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Textarea } from "@/components/ui";
 import { ArrowLeft, Zap, AlertTriangle, Upload, MessageCircle, CheckCircle, Clock } from "lucide-react";
@@ -33,9 +33,42 @@ export default function DisputePage({ params }: { params: Promise<{ id: string }
   const { id } = use(params);
   const [dispute, setDispute] = useState<Dispute | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [evidenceText, setEvidenceText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [isNewDispute, setIsNewDispute] = useState(false);
+
+  const fetchDispute = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please sign in to view this dispute");
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch(`/api/disputes/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to load dispute");
+        setLoading(false);
+        return;
+      }
+
+      setDispute(data.dispute);
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch dispute:", err);
+      setError("Something went wrong");
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     // Check if this is a transaction ID (new dispute) or dispute ID (existing)
@@ -45,28 +78,7 @@ export default function DisputePage({ params }: { params: Promise<{ id: string }
     } else {
       fetchDispute();
     }
-  }, [id]);
-
-  const fetchDispute = async () => {
-    // Mock data for demo
-    setDispute({
-      id: id,
-      transactionId: "tx-123",
-      evidenceText: "The item I received was not as described. The charger has visible damage and doesn't work properly.",
-      photos: [],
-      decision: "PENDING",
-      confidence: null,
-      aiSummary: null,
-      createdAt: new Date().toISOString(),
-      resolvedAt: null,
-      transaction: {
-        item: { name: "iPhone Charger", price: 25 },
-        buyer: { name: "John Doe" },
-        seller: { name: "Jane Smith" },
-      },
-    });
-    setLoading(false);
-  };
+  }, [id, fetchDispute]);
 
   const handleSubmitDispute = async () => {
     if (!evidenceText.trim()) {
@@ -133,6 +145,17 @@ export default function DisputePage({ params }: { params: Promise<{ id: string }
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error && !isNewDispute) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Link href="/home">
+          <Button>Back to Home</Button>
+        </Link>
       </div>
     );
   }

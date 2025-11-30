@@ -64,19 +64,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for existing pending transaction
+    // Check for existing pending transaction - reuse if exists (no duplicates)
     const existingTransaction = await prisma.transaction.findFirst({
       where: {
         buyerId: userId,
         itemId,
         status: { in: ["REQUESTED", "ACCEPTED", "PAID", "MEETING"] },
       },
+      include: {
+        buyer: {
+          select: {
+            id: true,
+            name: true,
+            photo: true,
+            verificationStatus: true,
+            trustScore: true,
+          },
+        },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            photo: true,
+            verificationStatus: true,
+            trustScore: true,
+          },
+        },
+        item: true,
+      },
     });
 
+    // If chat already exists, reopen the same chat (no duplicates)
     if (existingTransaction) {
       return NextResponse.json(
-        { error: "You already have a pending transaction for this item" },
-        { status: 400 }
+        {
+          message: "Chat already exists with seller",
+          transaction: existingTransaction,
+        },
+        { status: 200 }
       );
     }
 
@@ -114,6 +139,18 @@ export async function POST(request: NextRequest) {
 
     // Item remains AVAILABLE until seller accepts the transaction
     // Status will be updated to RESERVED when seller accepts
+
+    // Create auto-message from buyer to seller
+    const autoMessage = "Hi! I'm interested in this item. Is it still available?";
+    await prisma.message.create({
+      data: {
+        transactionId: transaction.id,
+        senderId: userId,
+        content: autoMessage,
+        isAI: false,
+        isFlagged: false,
+      },
+    });
 
     // TODO: Send Socket.io notification to seller
     // socketClient.emit('request', { transactionId: transaction.id, ... })

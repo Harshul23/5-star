@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, use, useCallback } from "react";
 import Link from "next/link";
 import { Button, Input, Avatar, AvatarFallback, Badge } from "@/components/ui";
-import { ArrowLeft, Send, IndianRupee, CheckCircle, MapPin } from "lucide-react";
+import { ArrowLeft, Send, IndianRupee, CheckCircle, MapPin, Bell } from "lucide-react";
 
 interface Message {
   id: string;
@@ -53,6 +53,8 @@ export default function ChatPage({ params }: { params: Promise<{ transactionId: 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -152,6 +154,120 @@ export default function ChatPage({ params }: { params: Promise<{ transactionId: 
     setSending(false);
   };
 
+  // Seller accepts the transaction request
+  const handleAcceptRequest = async () => {
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please sign in");
+        return;
+      }
+
+      const res = await fetch("/api/transactions/accept", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ transactionId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Failed to accept request");
+        return;
+      }
+
+      // Refresh transaction data
+      fetchTransaction();
+    } catch (err) {
+      console.error("Failed to accept request:", err);
+      alert("Something went wrong");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Buyer pays for the item (dummy payment)
+  const handlePay = async () => {
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please sign in");
+        return;
+      }
+
+      // Generate dummy payment ID
+      const dummyPaymentId = `pay_dummy_${Date.now()}`;
+
+      const res = await fetch("/api/transactions/pay", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ transactionId, paymentId: dummyPaymentId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Payment failed");
+        return;
+      }
+
+      // Refresh transaction data
+      fetchTransaction();
+    } catch (err) {
+      console.error("Payment failed:", err);
+      alert("Something went wrong");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Seller approves the payment / Buyer confirms receipt
+  const handleConfirmReceipt = async () => {
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please sign in");
+        return;
+      }
+
+      const res = await fetch("/api/transactions/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ transactionId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Confirmation failed");
+        return;
+      }
+
+      // Show success popup
+      setShowSuccessPopup(true);
+      
+      // Refresh transaction data
+      fetchTransaction();
+    } catch (err) {
+      console.error("Confirmation failed:", err);
+      alert("Something went wrong");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "REQUESTED":
@@ -190,9 +306,29 @@ export default function ChatPage({ params }: { params: Promise<{ transactionId: 
 
   const currentUserId = currentUser?.id || "";
   const otherUser = currentUserId === transaction.buyer.id ? transaction.seller : transaction.buyer;
+  const isSeller = currentUserId === transaction.seller.id;
+  const isBuyer = currentUserId === transaction.buyer.id;
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+            <p className="text-gray-600 mb-6">
+              The transaction has been completed successfully. The item has been marked as sold.
+            </p>
+            <Button onClick={() => setShowSuccessPopup(false)} className="w-full">
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white border-b p-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -228,19 +364,50 @@ export default function ChatPage({ params }: { params: Promise<{ transactionId: 
             )}
           </div>
           <div className="flex space-x-2">
-            {transaction.status === "ACCEPTED" && (
-              <Link href={`/meetup/${transactionId}`}>
-                <Button size="sm">
-                  <IndianRupee className="h-4 w-4 mr-1" />
-                  Pay & Meet
-                </Button>
-              </Link>
-            )}
-            {transaction.status === "PAID" && (
-              <Button size="sm" variant="success">
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Confirm Receipt
+            {/* Seller sees Accept button when status is REQUESTED */}
+            {transaction.status === "REQUESTED" && isSeller && (
+              <Button
+                size="sm"
+                onClick={handleAcceptRequest}
+                disabled={actionLoading}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Bell className="h-4 w-4 mr-1" />
+                {actionLoading ? "Accepting..." : "Accept Request"}
               </Button>
+            )}
+            
+            {/* Buyer sees Pay button when status is ACCEPTED */}
+            {transaction.status === "ACCEPTED" && isBuyer && (
+              <Button
+                size="sm"
+                onClick={handlePay}
+                disabled={actionLoading}
+              >
+                <IndianRupee className="h-4 w-4 mr-1" />
+                {actionLoading ? "Processing..." : `Pay ₹${transaction.escrowAmount.toFixed(2)}`}
+              </Button>
+            )}
+            
+            {/* Buyer sees Confirm Receipt button when status is PAID */}
+            {transaction.status === "PAID" && isBuyer && (
+              <Button
+                size="sm"
+                onClick={handleConfirmReceipt}
+                disabled={actionLoading}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                {actionLoading ? "Confirming..." : "Approve Payment"}
+              </Button>
+            )}
+
+            {/* Show completed status */}
+            {transaction.status === "COMPLETED" && (
+              <Badge className="bg-green-100 text-green-800">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Sale Complete
+              </Badge>
             )}
           </div>
         </div>
