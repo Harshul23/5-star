@@ -23,7 +23,7 @@ export const verifyIdSchema = z.object({
   idPhotoUrl: z.string().url("Invalid photo URL"),
 });
 
-// Custom validator for URLs or image data URLs
+// Custom validator for URLs or image data URLs (moved before updateUserSchema for reuse)
 const urlOrDataUrl = z.string().refine(
   (val) => {
     // Accept image data URLs (base64 encoded images)
@@ -40,6 +40,14 @@ const urlOrDataUrl = z.string().refine(
   },
   { message: "Must be a valid URL or image data URL" }
 );
+
+// Update user profile validator
+export const updateUserSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").optional(),
+  email: z.string().email("Invalid email address").optional(),
+  college: z.string().optional().nullable(),
+  photo: urlOrDataUrl.optional().nullable(),
+});
 
 // Item validators
 export const createItemSchema = z.object({
@@ -123,3 +131,4 @@ export type CreateRatingInput = z.infer<typeof createRatingSchema>;
 export type CreateDisputeInput = z.infer<typeof createDisputeSchema>;
 export type SearchInput = z.infer<typeof searchSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
